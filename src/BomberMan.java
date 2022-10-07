@@ -5,6 +5,8 @@ import java.awt.image.BufferedImage;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.Random;
+
+// HieuNghia
 class Bomb {
     int x, y;
     boolean exploded;
