@@ -7,8 +7,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.util.Random;
-
-// HieuNghia
 class Bomb {
     int x, y;
     boolean exploded;
@@ -27,7 +25,7 @@ public class BomberMan extends JPanel implements Runnable, KeyListener {
     int tileSize = 16, rows = 13, columns = 15;
     int speed = 4;
     boolean right, left, up, down;
-    boolean moving, emoving, erunning;
+    boolean moving, emoving, erunning, eAlive = false, bombexist = false;
     int[] ranE = {0, 1, 2, 3};
     int m, n = 0;
     int framePlayer = 0, intervalPlayer = 5, indexAnimPlayer = 0, frameEnemy = 0, indexAnimEnemy = 0;
@@ -73,8 +71,8 @@ public class BomberMan extends JPanel implements Runnable, KeyListener {
     public boolean isFree(int X, int Y, int nextX, int nextY) {
         int size = SCALE * tileSize;
 
-        int nowX = X / size;
-        int nowY = Y / size;
+        int nowX = (X + ((SCALE * tileSize) / 2)) / (SCALE * tileSize);
+        int nowY = (Y + ((SCALE * tileSize) / 2)) / (SCALE * tileSize);
 
         int nextX_1 = nextX / size;
         int nextY_1 = nextY / size;
@@ -88,10 +86,10 @@ public class BomberMan extends JPanel implements Runnable, KeyListener {
         int nextX_4 = (nextX + size - 1) / size;
         int nextY_4 = (nextY + size - 1) / size;
 
-        return !(scene[nextY_1][nextX_1] == 1 || scene[nextY_1][nextX_1] == 2 || (scene[nextY_1][nextX_1] == 3 && nowX != bombX && nowY != bombY) ||
-                scene[nextY_2][nextX_2] == 1 || scene[nextY_2][nextX_2] == 2 || (scene[nextY_2][nextX_2] == 3 && nowX != bombX && nowY != bombY) ||
-                scene[nextY_3][nextX_3] == 1 || scene[nextY_3][nextX_3] == 2 || (scene[nextY_3][nextX_3] == 3 && nowX != bombY && nowY != bombY) ||
-                scene[nextY_4][nextX_4] == 1 || scene[nextY_4][nextX_4] == 2 || (scene[nextY_4][nextX_4] == 3 && nowX != bombY && nowY != bombY));
+        return !(scene[nextY_1][nextX_1] == 1 || scene[nextY_1][nextX_1] == 2 || scene[nextY_1][nextX_1] == 5 ||
+                scene[nextY_2][nextX_2] == 1 || scene[nextY_2][nextX_2] == 2 || scene[nextY_2][nextX_2] == 5 ||
+                scene[nextY_3][nextX_3] == 1 || scene[nextY_3][nextX_3] == 2 || scene[nextY_3][nextX_3] == 5 ||
+                scene[nextY_4][nextX_4] == 1 || scene[nextY_4][nextX_4] == 2 || scene[nextY_4][nextX_4] == 5 );
     }
 
 
@@ -112,7 +110,7 @@ public class BomberMan extends JPanel implements Runnable, KeyListener {
             concreteTile = spriteSheet.getSubimage(4 * tileSize, 3 * tileSize, tileSize, tileSize);
             blockTile = spriteSheet.getSubimage(3 * tileSize, 3 * tileSize, tileSize, tileSize);
             player = spriteSheet.getSubimage(4 * tileSize, 0, tileSize, tileSize);
-            enemy = enemySheet.getSubimage(4 * tileSize, 0, tileSize, tileSize);
+            enemy = ImageIO.read(getClass().getResource("/balloom_left1.png"));
 
             playerAnimUp = new BufferedImage[3];
             playerAnimDown = new BufferedImage[3];
@@ -165,13 +163,22 @@ public class BomberMan extends JPanel implements Runnable, KeyListener {
                 playerAnimDown[i] = spriteSheet.getSubimage((i + 3) * tileSize, 0, tileSize, tileSize);
                 playerAnimUp[i] = spriteSheet.getSubimage((i + 3) * tileSize, tileSize, tileSize, tileSize);
 
-                enemyAnimLeft[i] = spriteSheet.getSubimage(i * tileSize, 0, tileSize, tileSize);
-                enemyAnimRight[i] = spriteSheet.getSubimage(i * tileSize, tileSize, tileSize, tileSize);
-                enemyAnimDown[i] = spriteSheet.getSubimage((i + 3) * tileSize, 0, tileSize, tileSize);
-                enemyAnimUp[i] = spriteSheet.getSubimage((i + 3) * tileSize, tileSize, tileSize, tileSize);
+
+                enemyAnimDown[i] = ImageIO.read(getClass().getResource("/balloom_left1.png"));
+                enemyAnimUp[i] = ImageIO.read(getClass().getResource("/balloom_left1.png"));
+
+
 
                 bombAnim[i] = spriteSheet.getSubimage(i * tileSize, 3 * tileSize, tileSize, tileSize);
             }
+
+            enemyAnimLeft[0] = ImageIO.read(getClass().getResource("/balloom_left1.png"));
+            enemyAnimLeft[1] = ImageIO.read(getClass().getResource("/balloom_left2.png"));
+            enemyAnimLeft[2] = ImageIO.read(getClass().getResource("/balloom_left3.png"));
+            enemyAnimRight[0] = ImageIO.read(getClass().getResource("/balloom_right1.png"));
+            enemyAnimRight[1] = ImageIO.read(getClass().getResource("/balloom_right2.png"));
+            enemyAnimRight[2] = ImageIO.read(getClass().getResource("/balloom_right3.png"));
+
 
             scene = new int[][]{
                     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
@@ -200,36 +207,16 @@ public class BomberMan extends JPanel implements Runnable, KeyListener {
                     }
                 }
             }
-
-
-            int cnt=0;
-
-            for (int i = 0; i < rows; i++) {
-                for (int j = 0; j < columns; j++) {
-                    if (scene[i][j] == 0) {
-                        cnt++;
-                    }
-                }
-            }
-
-            int m = new Random().nextInt(cnt);
-
-            for (int i = 0; i < rows; i++) {
-                for (int j = 0; j < columns; j++) {
-                    if (scene[i][j] == 0) {
-                        m--;
-                        if(m==0)
-                        {
-                            enemyY = i * (tileSize * SCALE);
-                            enemyX = j * (tileSize * SCALE);
-                            scene[i][j] = 4;
-                        }
-                    }
-                }
-            }
             scene[1][1] = 0;
             scene[2][1] = 0;
             scene[1][2] = 0;
+            scene[10][13] = 0;
+            scene[10][12] = 0;
+            scene[11][12] = 0;
+
+            enemyY = 11 * (tileSize * SCALE);
+            enemyX = 13 * (tileSize * SCALE);
+            scene[11][13] = 4;
 
             playerX = (tileSize * SCALE);
             playerY = (tileSize * SCALE);
@@ -242,6 +229,9 @@ public class BomberMan extends JPanel implements Runnable, KeyListener {
         moving = false;
         emoving = false;
         erunning = true;
+
+
+
 
         if (right && isFree(playerX, playerY,playerX + speed, playerY)) {
             playerX += speed;
@@ -261,63 +251,66 @@ public class BomberMan extends JPanel implements Runnable, KeyListener {
         }
 
         m = ranE[n];
-
-        if (m == 0 ) {
-            if(isFree(enemyX, enemyY,enemyX + speed, enemyY))
+        if(eAlive)
+        {
+            if (m == 0 ) {
+                if(isFree(enemyX, enemyY,enemyX + speed, enemyY))
                 {
                     enemyX += speed/3 ;
                     emoving = true;
                     erunning = false;
                 }
-            else
+                else
                 {
                     erunning = true;
                 }
-        }
-        if (m == 1 ) {
-            if(isFree(enemyX, enemyY, enemyX - speed, enemyY))
-            {
-                enemyX -= speed/3 ;
-                emoving = true;
-                erunning = false;
             }
-            else
-            {
-                erunning = true;
+            if (m == 1 ) {
+                if(isFree(enemyX, enemyY, enemyX - speed, enemyY))
+                {
+                    enemyX -= speed/3 ;
+                    emoving = true;
+                    erunning = false;
+                }
+                else
+                {
+                    erunning = true;
+                }
             }
-        }
-        if (m == 2 ) {
-            if(isFree(enemyX, enemyY,enemyX, enemyY - speed))
-            {
-                enemyY -= speed/3 ;
-                emoving = true;
-                erunning = false;
+            if (m == 2 ) {
+                if(isFree(enemyX, enemyY,enemyX, enemyY - speed))
+                {
+                    enemyY -= speed/3 ;
+                    emoving = true;
+                    erunning = false;
+                }
+                else
+                {
+                    erunning = true;
+                }
             }
-            else
-            {
-                erunning = true;
+            if (m == 3 ) {
+                if(isFree(enemyX, enemyY, enemyX, enemyY + speed))
+                {
+                    enemyY += speed/3 ;
+                    emoving = true;
+                    erunning = false;
+                }
+                else
+                {
+                    erunning = true;
+                }
             }
-        }
-        if (m == 3 ) {
-            if(isFree(enemyX, enemyY, enemyX, enemyY + speed))
+
+            if(erunning)
             {
-                enemyY += speed/3 ;
-                emoving = true;
-                erunning = false;
-            }
-            else
-            {
-                erunning = true;
+                n++;
+                if(n>3) {
+                    n = 0;
+                }
             }
         }
 
-        if(erunning)
-        {
-            n++;
-            if(n>3) {
-                n = 0;
-            }
-        }
 
 
         if (bomb != null) {
@@ -440,7 +433,16 @@ public class BomberMan extends JPanel implements Runnable, KeyListener {
             enemy = enemyAnimDown[1];
         }
 
+        int nowPX = (playerX + ((SCALE * tileSize) / 2)) / (SCALE * tileSize);
+        int nowPY = (playerY + ((SCALE * tileSize) / 2)) / (SCALE * tileSize);
+        int nowEX = (enemyX + ((SCALE * tileSize) / 2)) / (SCALE * tileSize);
+        int nowEY = (enemyY + ((SCALE * tileSize) / 2)) / (SCALE * tileSize);
 
+        if(nowPX == nowEX && nowPY == nowEY)
+        {
+            playerX = (tileSize * SCALE);
+            playerY = (tileSize * SCALE);
+        }
     }
 
     public void draw() {
@@ -457,21 +459,66 @@ public class BomberMan extends JPanel implements Runnable, KeyListener {
                     g2.drawImage(concreteTile, i * size, j * size, size, size, null);
                 } else if (scene[j][i] == 4) {
                     g2.drawImage(enemy, enemyX, enemyY, size, size, null);
+                    eAlive = true;
                 }else if (scene[j][i] == 3) {
                     if (bomb != null) {
                         if (bomb.exploded) {
                             g2.drawImage(fontExplosion[indexAnimExplosion], bomb.x * size, bomb.y * size, size, size, null);
                             if (scene[bomb.y][bomb.x + 1] == 0) {
                                 g2.drawImage(rightExplosion[indexAnimExplosion], (bomb.x + 1) * size, bomb.y * size, size, size, null);
+                                if((playerX + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.x + 1 && (playerY + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.y)
+                                {
+                                    playerX = (tileSize * SCALE);
+                                    playerY = (tileSize * SCALE);
+                                }
+                                if((enemyX + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.x + 1 && (enemyY + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.y)
+                                {
+                                    enemyX = 13 * (tileSize * SCALE);
+                                    enemyY = 11 * (tileSize * SCALE);
+                                    eAlive = false;
+                                }
                             }
                             if (scene[bomb.y][bomb.x - 1] == 0) {
                                 g2.drawImage(leftExplosion[indexAnimExplosion], (bomb.x - 1) * size, bomb.y * size, size, size, null);
+                                if((playerX + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.x - 1 && (playerY + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.y)
+                                {
+                                    playerX = (tileSize * SCALE);
+                                    playerY = (tileSize * SCALE);
+                                }
+                                if((enemyX + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.x - 1 && (enemyY + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.y)
+                                {
+                                    enemyX = 13 * (tileSize * SCALE);
+                                    enemyY = 11 * (tileSize * SCALE);
+                                    eAlive = false;
+                                }
                             }
                             if (scene[bomb.y - 1][bomb.x] == 0) {
                                 g2.drawImage(upExplosion[indexAnimExplosion], bomb.x * size, (bomb.y - 1) * size, size, size, null);
+                                if((playerX + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.x && (playerY + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.y - 1)
+                                {
+                                    playerX = (tileSize * SCALE);
+                                    playerY = (tileSize * SCALE);
+                                }
+                                if((enemyX + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.x && (enemyY + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.y - 1)
+                                {
+                                    enemyX = 13 * (tileSize * SCALE);
+                                    enemyY = 11 * (tileSize * SCALE);
+                                    eAlive = false;
+                                }
                             }
                             if (scene[bomb.y + 1][bomb.x] == 0) {
                                 g2.drawImage(downExplosion[indexAnimExplosion], bomb.x * size, (bomb.y + 1) * size, size, size, null);
+                                if((playerX + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.x && (playerY + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.y + 1)
+                                {
+                                    playerX = (tileSize * SCALE);
+                                    playerY = (tileSize * SCALE);
+                                }
+                                if((enemyX + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.x && (enemyY + ((SCALE * tileSize) / 2)) / (SCALE * tileSize) == bomb.y + 1)
+                                {
+                                    enemyX = 13 * (tileSize * SCALE);
+                                    enemyY = 11 * (tileSize * SCALE);
+                                    eAlive = false;
+                                }
                             }
                         } else {
                             g2.drawImage(bombAnim[indexAnimBomb], i * size, j * size, size, size, null);
@@ -518,6 +565,7 @@ public class BomberMan extends JPanel implements Runnable, KeyListener {
                 bomb.x = (playerX + ((SCALE * tileSize) / 2)) / (SCALE * tileSize);
                 bomb.y = (playerY + ((SCALE * tileSize) / 2)) / (SCALE * tileSize);
                 scene[bomb.y][bomb.x] = 3;
+                bombexist = true;
             }
         }
         if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
